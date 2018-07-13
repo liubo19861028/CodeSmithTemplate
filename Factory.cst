@@ -1,0 +1,118 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" ResponseEncoding="UTF-8" Description="Generates a very simple business object." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the object is based on." %>
+<%--<%@ Property Name="NameSpace" Type="System.String" Default="Kryou" Category="Text" Description="Namespace for this class" %>--%>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+// =================================================================== 
+// 项目说明
+//====================================================================
+// 作者：liubo
+// 文件： <%= GetClassName(SourceTable) %>.cs
+// 项目名称：YiHao.Midd.Factory
+// 创建时间：<%=DateTime.Now.ToShortDateString() %>
+// ===================================================================
+using YiHao.Midd.IDal;
+
+namespace YiHao.Midd.Factory
+{
+    /// <summary>
+    /// <%= SourceTable %> 工厂类。
+    /// </summary>
+    public class <%= GetClassName(SourceTable) %>Factory : DataAccess
+    {
+        /// <summary>
+        /// 个人中心
+        /// </summary>
+        /// <returns></returns>
+        public static I<%= GetClassName(SourceTable) %>DAL <%= GetClassName(SourceTable) %>DAL()
+        {
+            string CacheKey = path + ".<%= GetClassName(SourceTable) %>DAL";
+            object objType = CreateObject(path, CacheKey);
+            return (I<%= GetClassName(SourceTable) %>DAL)objType;
+        }
+    }
+}
+
+<script runat="template">
+
+    public string GetCamelCaseName(string value)
+    {
+        return value.Substring(0, 1).ToLower() + value.Substring(1);
+    }
+
+    public string ConvertFirstCharToUpper(string value)
+    {
+        return value.Substring(0, 1).ToUpper() + value.Substring(1);
+    }
+
+    public string GetClassName(TableSchema table)
+    {
+        /*
+        if (table.Name.EndsWith("s"))
+        {
+            return table.Name.Substring(0, table.Name.Length - 1);
+        }
+        else
+        {
+            return table.Name;
+        }
+		*/
+		if(table==null)
+		{
+		    return null;
+		}
+		return table.Name;
+    }
+
+	public string GetLowerCaseName(string value)
+    {
+	    return value.ToLower();
+    }
+	
+	public string GetModuleInstanceName(TableSchema table)
+	{
+		return "_"+table.Name+"Model";
+	}
+
+    public string GetCSharpVariableType(ColumnSchema column)
+    {
+		if (column.Name.EndsWith("TypeCode")) return column.Name;
+		
+		switch (column.DataType)
+		{
+			case DbType.AnsiString: return "string";
+			case DbType.AnsiStringFixedLength: return "string";
+			case DbType.Binary: return "byte[]";
+			case DbType.Boolean: return "bool";
+			case DbType.Byte: return "byte";
+			case DbType.Currency: return "decimal";
+			case DbType.Date: return "DateTime";
+			case DbType.DateTime: return "DateTime";
+			case DbType.Decimal: return "decimal";
+			case DbType.Double: return "double";
+			case DbType.Guid: return "Guid";
+			case DbType.Int16: return "short";
+			case DbType.Int32: return "int";
+			case DbType.Int64: return "long";
+			case DbType.Object: return "object";
+			case DbType.SByte: return "sbyte";
+			case DbType.Single: return "float";
+			case DbType.String: return "string";
+			case DbType.StringFixedLength: return "string";
+			case DbType.Time: return "TimeSpan";
+			case DbType.UInt16: return "ushort";
+			case DbType.UInt32: return "uint";
+			case DbType.UInt64: return "ulong";
+			case DbType.VarNumeric: return "decimal";
+			default:
+			{
+				return "__UNKNOWN__" + column.NativeType;
+			}
+		}
+	}
+	
+	public string GetPrimaryKeyCSharpType()
+	{
+		return GetCSharpVariableType(SourceTable.PrimaryKey.MemberColumns[0]);
+	}
+</script>

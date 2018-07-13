@@ -1,0 +1,72 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" ResponseEncoding="UTF-8" Description="Generates a very simple business object." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the object is based on." %>
+<%--<%@ Property Name="NameSpace" Type="System.String" Default="YiHaoJiaJu.CMS" Category="Text" Description="Namespace for this class" %>--%>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+<%
+ string primaryKey="";
+ if(SourceTable.HasPrimaryKey)
+ {
+     primaryKey=SourceTable.PrimaryKey.MemberColumns[0].Name;
+ }
+%>
+// =================================================================== 
+// 项目说明
+//====================================================================
+// 作者：liubo
+// 文件： <%= GetClassName(SourceTable) %>.cs
+// 项目名称：YiHao.Midd.SQLServerDal
+// 创建时间：<%=DateTime.Now.ToShortDateString() %>
+// ===================================================================
+using System.Data;
+using System.Data.SqlClient;
+using System.Collections.Generic;
+using Yihao.Framework.DataAccess.DataAdo;
+using YiHao.Midd.IDal;
+using YiHao.Entity;
+using YiHao.Entity.Model;
+
+namespace YiHao.Midd.SQLServerDal
+{
+    /// <summary>
+    /// 数据层实例化接口类  <%= SourceTable %>.
+    /// </summary>
+    
+    public partial class <%= GetClassName(SourceTable) %>DAL : BaseDAL<<%= GetClassName(SourceTable) %>>, I<%= GetClassName(SourceTable) %>DAL
+    {
+        /// <summary>
+        /// 按条件搜索获取数据集
+        /// </summary>
+        /// <param name="searchModel"></param>
+        /// <param name="total"></param>
+        /// <returns></returns>
+        public override List<<%= GetClassName(SourceTable) %>> PageSearch(BaseSearch searchModel, ref int total)
+        {
+            dBCondition = new DBCondition();
+            dBCondition.Table = "<%= GetClassName(SourceTable) %>";
+            dBCondition.KeyPrimary = "<%= primaryKey %>";
+            dBCondition.Field = " * ";
+            dBCondition.Where = " 1=1 ";
+
+           
+            
+
+            return  base.PageSearch(searchModel, ref total);
+        }
+    }
+}
+<script runat="template">
+public string GetClassName(TableSchema table)
+    {
+       
+		if(table==null)
+		{
+		    return null;
+		}
+		return table.Name;
+    }
+</script>

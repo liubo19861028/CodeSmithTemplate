@@ -1,0 +1,193 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" ResponseEncoding="UTF-8" Description="Generates a very simple business object." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the object is based on." %>
+<%--<%@ Property Name="NameSpace" Type="System.String" Default="Kryou" Category="Text" Description="Namespace for this class" %>--%>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+// =================================================================== 
+// 项目说明
+//====================================================================
+// 作者：liubo
+// 文件： <%= GetClassName(SourceTable) %>Controllers.cs
+// 项目名称：YiHao.Decoration.Web.Controllers
+// 创建时间：<%=DateTime.Now.ToShortDateString() %>
+// ===================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using YiHao.Comm.Common;
+using YiHao.Decoration.BLL;
+using YiHao.Entity.Info.EasyUI;
+using YiHao.Entity.Model;
+using YiHao.Entity.Search;
+
+namespace YiHao.Decoration.Web.Controllers
+{
+    public class <%= GetClassName(SourceTable) %>Controller : BaseController
+    {
+        public ActionResult Index()
+        {
+            return View();
+        }
+
+
+        /// <summary>
+        /// 查看详情页
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public ActionResult Details(int id)
+        {
+            <%= GetClassName(SourceTable) %> model = <%= GetClassName(SourceTable) %>BLL.GetModel(id);
+            return View(model);
+
+        }
+
+        /// <summary>
+        /// 添加操作
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult Post_Add(<%= GetClassName(SourceTable) %> entity)
+        {
+            result = <%= GetClassName(SourceTable) %>BLL.Add(entity);
+            return Json(result);
+        }
+
+        /// <summary>
+        /// 编辑操作
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult Post_Edit(<%= GetClassName(SourceTable) %> entity)
+        {
+            result =<%= GetClassName(SourceTable) %>BLL.Update(entity);
+            return Json(result);
+        }
+
+        public ActionResult Delete(string id)
+        {
+            result =<%= GetClassName(SourceTable) %>BLL.Delete(id);
+            return Json(result);
+        }
+
+        /// <summary>
+        /// 获取数据实体
+        /// </summary>
+        /// <param name="?"></param>
+        /// <returns></returns>
+        public ActionResult GetModel()
+        {
+            int id = QueryStringHelper.GetInt("id");
+            <%= GetClassName(SourceTable) %> model = <%= GetClassName(SourceTable) %>BLL.GetModel(id);
+            return Json(model);
+        }
+
+        /// <summary>
+        /// 分页获取数据集
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult QueryListByPager()
+        {
+            <%= GetClassName(SourceTable) %>Search search = new <%= GetClassName(SourceTable) %>Search();
+            search.pageIndex = QueryStringHelper.GetInt("page", 1);
+            search.pageSize = QueryStringHelper.GetInt("rows",10);
+           <%--<%for(int c = 0;c<SourceTable.PrimaryKeys.Count;c++){ %>
+              <% if(c>1){ break;} %>--%>
+            search.sort = "<%=  SourceTable.PrimaryKey.MemberColumns[0].Name %>";
+           <%--<%} %>--%>
+            search.order = "desc";
+            var result= <%= GetClassName(SourceTable) %>BLL.QueryListByPager(search);            
+
+            return Json(result);
+
+        }
+
+    }
+}
+
+
+<script runat="template">
+
+    public string GetCamelCaseName(string value)
+    {
+        return value.Substring(0, 1).ToLower() + value.Substring(1);
+    }
+
+    public string ConvertFirstCharToUpper(string value)
+    {
+        return value.Substring(0, 1).ToUpper() + value.Substring(1);
+    }
+
+    public string GetClassName(TableSchema table)
+    {
+        /*
+        if (table.Name.EndsWith("s"))
+        {
+            return table.Name.Substring(0, table.Name.Length - 1);
+        }
+        else
+        {
+            return table.Name;
+        }
+		*/
+		if(table==null)
+		{
+		    return null;
+		}
+		return table.Name;
+    }
+
+	public string GetLowerCaseName(string value)
+    {
+	    return value.ToLower();
+    }
+	
+	public string GetModuleInstanceName(TableSchema table)
+	{
+		return "_"+table.Name+"Model";
+	}
+
+    public string GetCSharpVariableType(ColumnSchema column)
+    {
+		if (column.Name.EndsWith("TypeCode")) return column.Name;
+		
+		switch (column.DataType)
+		{
+			case DbType.AnsiString: return "string";
+			case DbType.AnsiStringFixedLength: return "string";
+			case DbType.Binary: return "byte[]";
+			case DbType.Boolean: return "bool";
+			case DbType.Byte: return "byte";
+			case DbType.Currency: return "decimal";
+			case DbType.Date: return "DateTime";
+			case DbType.DateTime: return "DateTime";
+			case DbType.Decimal: return "decimal";
+			case DbType.Double: return "double";
+			case DbType.Guid: return "Guid";
+			case DbType.Int16: return "short";
+			case DbType.Int32: return "int";
+			case DbType.Int64: return "long";
+			case DbType.Object: return "object";
+			case DbType.SByte: return "sbyte";
+			case DbType.Single: return "float";
+			case DbType.String: return "string";
+			case DbType.StringFixedLength: return "string";
+			case DbType.Time: return "TimeSpan";
+			case DbType.UInt16: return "ushort";
+			case DbType.UInt32: return "uint";
+			case DbType.UInt64: return "ulong";
+			case DbType.VarNumeric: return "decimal";
+			default:
+			{
+				return "__UNKNOWN__" + column.NativeType;
+			}
+		}
+	}
+	
+	public string GetPrimaryKeyCSharpType()
+	{
+		return GetCSharpVariableType(SourceTable.PrimaryKey.MemberColumns[0]);
+	}
+</script>

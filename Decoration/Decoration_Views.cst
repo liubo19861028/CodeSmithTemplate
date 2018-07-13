@@ -1,0 +1,255 @@
+﻿<%@ CodeTemplate Inherits="CodeTemplate" Language="C#" TargetLanguage="Text" Description="NetTiers main template." Debug="True" ResponseEncoding="UTF-8"%>
+<%--在模板里面用到了codesmith的函数和方法,需要引入对应的包--%>
+<%@ Assembly Name="SchemaExplorer"%>
+<%@ Import Namespace="SchemaExplorer"%>
+<%@ Import Namespace="System.Collections.Generic"%>
+<%--<%@ Property Name="SourceTable" Type="TableSchema" DeepLoad="True" Optional="False"  Category="01. Getting Started - Required"%>--%>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the object is based on." %>             
+@model YiHao.Entity.Model.<%=SourceTable.Name %>
+@{
+    ViewBag.Title = "<%=SourceTable.Description %>管理";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section  jsInsert{
+  <script>
+    $.extend(
+			pageConfig,
+			{
+			    createUrl: '/<%=SourceTable.Name %>/Post_Add',
+			    modifyUrl: '/<%=SourceTable.Name %>/Post_Edit',
+			    deleteUrl: '/<%=SourceTable.Name %>/Delete',
+                getModelUrl: '/<%=SourceTable.Name %>/GetModel',
+                primaryKey:'<%= SourceTable.HasPrimaryKey?SourceTable.PrimaryKey.MemberColumns[0].Name:"" %>'
+			}
+    );
+    </script>
+}
+
+<body class="easyui-layout">
+	<div class="toolbar north" data-options="region:'north',border:false">
+		<!-- 搜索控制栏 -->
+		<form id="searchForm">
+			名称：<input name="search_categoryName" type="text" class="ui-text" style="width: 120px;" />&nbsp;&nbsp; &nbsp;&nbsp;
+            <a href="#" class="easyui-linkbutton" iconcls="icon-search"  id="btnSearch">查询</a>
+            <a href="#" class="easyui-linkbutton" id="id_add" iconcls="icon-add"  plain="true" onclick="addFun();" >新增</a>
+            <a href="#" class="easyui-linkbutton" id="id_edit" iconcls="icon-edit"  plain="true" onclick="toolbar_editFun();">修改</a> 
+            <a href="#" class="easyui-linkbutton" id="id_cancel " onclick="deleteFun();"  iconcls="icon-cancel" plain="true">删除</a>
+		</form>
+	</div>
+
+	<div data-options="region:'center',border:false">
+		<!-- 数据表 -->
+		<table id="dataTable" class="easyui-datagrid"
+			data-options="url:'/<%=SourceTable.Name %>/QueryListByPager',idField:'<%= SourceTable.HasPrimaryKey?SourceTable.PrimaryKey.MemberColumns[0].Name:"" %>',fit:true,pagination:true,border:false,rownumbers:true,queryParams:{},singleSelect:false,striped:true">
+			<thead>
+				<tr>
+                    <th data-options="field:'<%= SourceTable.HasPrimaryKey?SourceTable.PrimaryKey.MemberColumns[0].Name:"" %>',checkbox: true"></th>
+                    <% for(int i = 0 ;i<SourceTable.NonPrimaryKeyColumns.Count;i++){%>
+					   <th data-options="field:'<%=SourceTable.NonPrimaryKeyColumns[i].Name %>',width:'150',align:'center'"><%=SourceTable.NonPrimaryKeyColumns[i].Description %></th>
+                    <% } %> 
+					<th data-options="field:'opt',align:'center', formatter:pageConfig.formatOp,width:150">操作</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+
+
+
+@*添加 修改 start*@
+    <div id="infoDialog" class="easyui-dialog" title="编辑"   modal="true" closed="true" buttons="#edit-buttons">
+     <form id="infoForm" name="infoForm" method="post">
+        <table class="table_edit">
+            <% for(int i = 0 ;i<SourceTable.NonPrimaryKeyColumns.Count;i++){%>
+                  <tr>
+                    <td>@Html.LabelFor(model => model.<%=SourceTable.NonPrimaryKeyColumns[i].Name %>)</td>
+                    <td> <input <%=getClass(SourceTable.NonPrimaryKeyColumns[i])%> type="text" id="<%=SourceTable.NonPrimaryKeyColumns[i].Name %>" name="<%=SourceTable.NonPrimaryKeyColumns[i].Name %>" <%=getDataOptions(SourceTable.NonPrimaryKeyColumns[i]) %> /></td>
+                  </tr>
+            <% } %> 
+        </table>
+        <input type="hidden"  name="<%= SourceTable.HasPrimaryKey?SourceTable.PrimaryKey.MemberColumns[0].Name:"" %>" value="0" />
+        </form>
+    </div>
+    <div id="edit-buttons">
+        <a id="btnInfoDialogSubmit" href="javascript:;" class="easyui-linkbutton">提交</a> 
+        <a href="javascript:;" class="easyui-linkbutton" onclick="$('#infoDialog').dialog('close');return false;">取消</a>
+    </div>
+@*添加 修改 end*@
+</body>
+
+<script runat="template">
+//用于input中的data-options配置
+private string getDataOptions(ColumnSchema col){
+    string dataoptions="data-options=\"";
+    if (col.IsForeignKeyMember)
+        {
+            return dataoptions+="valueField:'id',textField:'text',url:'/"+col.Table.Name+"/Get"+col.Name+"Datas'\"";  
+        }
+    if (col.DataType!=DbType.DateTime)
+        {
+             dataoptions+="validType:'length[1,"+col.Size+"]'";
+        }else{
+            dataoptions+="value:''";
+        }
+   
+    if (!col.AllowDBNull)
+        {
+            dataoptions+= ",required:true";
+        }
+    dataoptions+="\"";
+
+    return dataoptions;
+}
+//配置表单字段的类型
+private string getClass(ColumnSchema col){
+    string classP="class=\"";
+    if (col.IsForeignKeyMember)
+            {
+                return classP+="easyui-combobox\"";
+            }
+    switch (col.DataType)
+        {
+        case DbType.DateTime:classP+="easyui-datebox\"";
+            break;
+        case DbType.String:classP+="easyui-validatebox\"";
+            break;
+        case DbType.AnsiString:classP+="easyui-validatebox\"";
+            break;
+        case DbType.Boolean:classP+="easyui-validatebox\"";
+            break;
+          default:
+            classP+="easyui-textbox\"";
+            break;
+        }
+        
+        return classP;
+}
+//数据库类型对应C#类型
+public string DataType2CSharpType(System.Data.DbType dbType)
+{
+    switch (dbType)
+    {
+        case DbType.AnsiString:
+            return "string";
+        case DbType.AnsiStringFixedLength:
+            return "string";
+        case DbType.Binary:
+            return "byte[]";
+        case DbType.Boolean:
+            return "bool";
+        case DbType.Byte:
+            return "byte";
+        case DbType.Currency:
+            return "decimal";
+        case DbType.Date:
+            return "DateTime";
+        case DbType.DateTime:
+            return "DateTime";
+        case DbType.DateTime2:
+            return "DateTime";
+        case DbType.DateTimeOffset:
+            return "DateTime";
+        case DbType.Decimal:
+            return "decimal";
+        case DbType.Double:
+            return "double";
+        case DbType.Guid:
+            return "Guid";
+        case DbType.Int16:
+            return "short";
+        case DbType.Int32:
+            return "int";
+        case DbType.Int64:
+            return "long";
+        case DbType.Object:
+            return "object";
+        case DbType.SByte:
+            return "sbyte";
+        case DbType.Single:
+            return "float";
+        case DbType.String:
+            return "string";
+        case DbType.StringFixedLength:
+            return "string";
+        case DbType.Time:
+            return "TimeSpan";
+        case DbType.UInt16:
+            return "ushort";
+        case DbType.UInt32:
+            return "uint";
+        case DbType.UInt64:
+            return "ulong";
+        case DbType.VarNumeric:
+            return "decimal";
+        case DbType.Xml:
+            return "string";
+        default:
+            return "object";
+    }
+}
+
+//数据库字段在C#中的默认值
+ public string DataTypeDefaultValue(System.Data.DbType dbType)
+    {
+        switch (dbType)
+        {
+            case DbType.AnsiString:
+                return "String.Empty";
+            case DbType.AnsiStringFixedLength:
+                return "String.Empty";
+            case DbType.Binary: //Answer modified was just 0
+                return "new byte[] {}";
+            case DbType.Boolean:
+                return "false";
+            case DbType.Byte: //Answer modified was just 0
+                return "(byte)0";
+            case DbType.Currency:
+                return "0";
+            case DbType.Date:
+                return "DateTime.MinValue";
+            case DbType.DateTime:
+                return "DateTime.MinValue";
+            case DbType.DateTime2:
+                return "DateTime.MinValue";
+            case DbType.DateTimeOffset:
+                return "DateTime.MinValue";
+            case DbType.Decimal:
+                return "0.0m";
+            case DbType.Double:
+                return "0.0f";
+            case DbType.Guid:
+                return "Guid.Empty";
+            case DbType.Int16:
+                return "(short)0";
+            case DbType.Int32:
+                return "(int)0";
+            case DbType.Int64:
+                return "(long)0";
+            case DbType.Object:
+                return "new object()";
+            case DbType.SByte:
+                return "(sbyte)0";
+            case DbType.Single:
+                return "0F";
+            case DbType.String:
+                return "String.Empty";
+            case DbType.StringFixedLength:
+                return "String.Empty";
+            case DbType.Time:
+                return "new DateTime(1900,1,1,0,0,0,0)"; //return "DateTime.MaxValue";
+            case DbType.UInt16:
+                return "(ushort)0";
+            case DbType.UInt32:
+                return "(uint)0";
+            case DbType.UInt64:
+                return "(ulong)0";
+            case DbType.VarNumeric:
+                return "(decimal)0";
+            case DbType.Xml:
+                return "String.Empty";
+            default:
+                return "null";
+        }
+    }
+
+</script>

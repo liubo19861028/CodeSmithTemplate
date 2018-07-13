@@ -1,0 +1,425 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="Text"  ResponseEncoding="UTF-8"  Debug="True" Description="Template description here." %>
+<%@ Property Name="Tables" Type="SchemaExplorer.TableSchemaCollection" Category="Source" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="CodeSmith.CustomProperties" %> 
+<%@ Assembly Name="System.Data" %>
+<%@ Assembly Name="System.Design" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Design" %>
+<%
+// This is done so that we can make some assumptions about what each table 
+// can contain.
+Tables = TableUtilities.FilterTables(Tables);
+%>
+
+<% if(!Directory.Exists(OutputDirectory)) Directory.CreateDirectory(OutputDirectory); %>
+
+<% 
+CodeTemplate ModelObjectTemplate = GetCodeTemplate("Entity.cst");
+CodeTemplate BLLTemplateSub = GetCodeTemplate("BLL.cst");
+CodeTemplate SQLServerDALTemplateSub =GetCodeTemplate("DAL.cst");
+CodeTemplate FactoryTemplateSub =GetCodeTemplate("Factory.cst");
+CodeTemplate IDALTemplateSub =GetCodeTemplate("IDAL.cst");
+CodeTemplate Api_ControllersTemplateSub =GetCodeTemplate("Api_Controllers.cst");
+%>
+
+<% 
+string ModelDirectory = OutputDirectory + "\\Common\\YiHao.Entity\\Model\\";
+string SQLServerDALDirectorySub = OutputDirectory + "\\Middleware\\Yihao.Middleware\\Yihao.Midd.SQLServerDal\\";
+string BLLDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.BLL\\";
+string FactoryDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.Factory\\";
+string IDALDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.IDal\\";
+string Api_ControllersDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.API\\Controllers\\";
+
+		if(!Directory.Exists(ModelDirectory)) Directory.CreateDirectory(ModelDirectory);
+		if(!Directory.Exists(BLLDirectorySub)) Directory.CreateDirectory(BLLDirectorySub);
+		if(!Directory.Exists(SQLServerDALDirectorySub)) Directory.CreateDirectory(SQLServerDALDirectorySub);
+        if(!Directory.Exists(FactoryDirectorySub)) Directory.CreateDirectory(FactoryDirectorySub);
+        if(!Directory.Exists(IDALDirectorySub)) Directory.CreateDirectory(IDALDirectorySub);
+        if(!Directory.Exists(Api_ControllersDirectorySub)) Directory.CreateDirectory(Api_ControllersDirectorySub);
+%>
+Create completed!
+
+<% 
+//Render Files
+for (int i = 0; i < Tables.Count; i++)
+{
+    RenderFileUsingProperties(ModelDirectory + GetClassName(Tables[i]) + "Entity.cs",true,ref ModelObjectTemplate,Tables[i]);
+	RenderFileUsingProperties(BLLDirectorySub + GetClassName(Tables[i]) + "BLL.cs",true,ref BLLTemplateSub,Tables[i]);
+	RenderFileUsingProperties(SQLServerDALDirectorySub + GetClassName(Tables[i]) + "DAL.cs",true,ref SQLServerDALTemplateSub,Tables[i]);
+	RenderFileUsingProperties(FactoryDirectorySub + GetClassName(Tables[i]) + "Factory.cs",true,ref FactoryTemplateSub,Tables[i]);
+    RenderFileUsingProperties(IDALDirectorySub + GetClassName(Tables[i]) + "IDAL.cs",true,ref IDALTemplateSub,Tables[i]);
+     RenderFileUsingProperties(Api_ControllersDirectorySub + GetClassName(Tables[i]) + "Controllers.cs",true,ref Api_ControllersTemplateSub,Tables[i]);
+}
+%>
+<%
+//Render option Files
+//if(Cache)
+//{
+//	/*CodeTemplate DataCacheTemplate = GetCodeTemplate("\\Base\\DataCache.cst");
+//	RenderFileUsingProperties(DALFactoryDirectory + "DataCache.cs",true,ref DataCacheTemplate);
+//	RenderFileUsingProperties(DALFactoryDirectory + "DataAccessFactory.cs",true,ref DALFactoryTemplate);
+//	RenderFileUsingProperties(SQLServerDALDirectory + "SqlHelper.cs",true,ref SqlHelper);*/
+//	//RenderFileUsingProperties(SQLServerDALDirectory + "Conn.cs",true,ref Conn);
+//}
+//else
+//{
+//	//RenderFileUsingProperties(DALFactoryDirectory + "DataAccessFactory.cs",true,ref DALFactoryTemplate);
+//}
+	
+%>
+
+
+<script runat="template">
+#region Properties
+    #region NameSpace
+//	private string _NameSpace = "ProjectManage";
+//    [Category("Namespaces")]
+//	[Description("NameSpace for class.")]
+//    public string NameSpace
+//    {
+//     	get 
+//		{
+//			return _NameSpace;
+//		}
+//     	set 
+//    	{
+//    		_NameSpace = value;
+//    	}
+//    }
+	#endregion
+	
+    #region Namespaces
+	/*
+	private string _BLLNamespace = "ElfinNet.BLL";
+    [Category("Namespaces")]        
+    public string BLLNamespace
+    {
+     	get 
+		{
+			return _BLLNamespace;
+		}
+     	set 
+    	{
+    		_BLLNamespace = value;
+    	}
+    }
+	
+	private string _DALFactoryNamespace = "ElfinNet.DALFactory";
+    [Category("Namespaces")]        
+    public string DALFactoryNamespace
+    {
+     	get 
+		{
+			return _DALFactoryNamespace;
+		}
+     	set 
+    	{
+    		_DALFactoryNamespace = value;
+    	}
+    }
+	
+	private string _IDALNamespace = "ElfinNet.IDAL";
+    [Category("Namespaces")]        		
+    public string IDALNamespace
+    {
+     	get 
+		{
+			return _IDALNamespace;
+		}
+     	set 
+    	{
+    		_IDALNamespace = value;
+    	}
+    }
+	
+	private string _ModelNamespace = "ElfinNet.Model";
+    [Category("Namespaces")]        		
+    public string ModelNamespace
+    {
+     	get 
+		{
+			return _ModelNamespace;
+		}
+     	set 
+    	{
+    		_ModelNamespace = value;
+    	}
+    }
+	private string _SQLServerDALNamespace = "ElfinNet.SQLServerDAL";
+    [Category("Namespaces")]        		
+    public string SQLServerDALNamespace
+    {
+     	get 
+		{
+			return _SQLServerDALNamespace;
+		}
+     	set 
+    	{
+    		_SQLServerDALNamespace = value;
+    	}
+    }
+	*/
+	#endregion
+	
+	//#region Database Properties
+	
+	private string _DBName = "ProjectManage";
+    [Category("Database")]
+	[Description("Database Name.")]
+    public string DBName
+    {
+     	get 
+		{
+			return _DBName;
+		}
+     	set 
+    	{
+    		_DBName = value;
+    	}
+    }
+	//private string _Prefix = "USP_";
+  //  [Category("Database")]
+	//[Description("Stroed Procedures Prefix.")]
+   // public string Prefix
+   // {
+     //	get 
+		//{
+	//		return _Prefix;
+	//	}
+     //	set 
+    //	{
+    //		_Prefix = value;
+    //	}
+  //  }
+	#endregion
+	
+    #region Output
+    private string _outputDirectory = String.Empty;
+	
+    [Editor(typeof(System.Windows.Forms.Design.FolderNameEditor), typeof(System.Drawing.Design.UITypeEditor))] 
+	[CodeTemplateProperty(CodeTemplatePropertyOption.Optional)]
+	[Category("General")]
+	[Description("The directory to output the results to.")]
+	[DefaultValue("")]
+	public string OutputDirectory 
+	{ 
+		get
+		{
+			if (_outputDirectory.Length == 0)
+			{
+				return @"C:\ProjectManage";
+			}
+			else
+			{
+				return _outputDirectory;
+			}
+		}
+		set
+		{
+			if (value.EndsWith("\\")) value = value.Substring(0, value.Length - 1);
+			_outputDirectory = value;
+		} 
+	}
+	#endregion
+	
+	#region Cache
+//	private bool _Cache = true;
+//    [Category("Cache")]
+//	[Description("User cache in DALFactory.")]
+//    public bool Cache
+//    {
+//     	get 
+//		{
+//			return _Cache;
+//		}
+//     	set 
+//    	{
+//    		_Cache = value;
+//    	}
+//    }
+	#endregion
+	
+	#region Path
+//	private string _Path = "ProjectManageDal";
+//    [Category("Path")] 
+//	[Description("SQLServerDAL Path.")]
+//    public string Path
+//    {
+//     	get 
+//		{
+//			return _Path;
+//		}
+//     	set 
+//    	{
+//    		_Path = value;
+//    	}
+//    }
+	#endregion
+	
+	#region DBList
+   // private CodeSmith.CustomProperties.StringCollection _DBList = 
+	//  new CodeSmith.CustomProperties.StringCollection(new string[]{"ElfinNetDB"});
+
+  //  [CodeTemplateProperty(CodeTemplatePropertyOption.Required)]
+	//[Category("Database")]
+	//[Description("Database List")]
+	//public CodeSmith.CustomProperties.StringCollection DBList
+	//{ 
+	////	get
+	//	{
+	//		if(_DBList==null || _DBList.Count<=0 || _DBList[0].Length==0)
+	//		    return null;
+	//		return _DBList;
+	//	}
+	//	set
+	//	{
+		//	if(value==null || value.Count<=0)
+	//		{
+		//	    _DBList = null;
+		//	}
+		//	else
+		//	{
+		//	    _DBList = value;
+		//	}
+		//} 
+	//}
+	#endregion
+//#endregion
+
+#region Methods
+	#region Get Template
+	public  CodeTemplate GetCodeTemplate(string TemplateName)
+	{		
+		//CodeTemplate template=null;
+		CodeTemplateCompiler compiler = new CodeTemplateCompiler(this.CodeTemplateInfo.DirectoryName+TemplateName); 
+		compiler.CodeTemplateInfo.ToString();
+		compiler.Compile(); 
+		if (compiler.Errors.Count == 0) 
+		{ 
+			return compiler.CreateInstance();
+		} 
+		else 
+		{ 
+			System.Text.StringBuilder errorMessage = new System.Text.StringBuilder();				
+			for (int i = 0; i < compiler.Errors.Count; i++) 
+			{
+				errorMessage.Append(compiler.Errors[i].ToString()).Append("\n");
+			} 
+			throw new ApplicationException(errorMessage.ToString());
+		} 
+		      
+		return null;
+	}
+	#endregion
+	
+	#region Render File
+	/// Copies all properties to a template
+	/// Renders the file 
+	/// NB. the overrite property
+	public void RenderFileUsingProperties(string fullPath, bool overrite, ref CodeTemplate template)
+	{
+		if( overrite || (!File.Exists(fullPath)) )
+		{
+			CopyPropertiesTo(template);
+			template.RenderToFile(fullPath, overrite);
+		}
+	}
+	
+	/// Copies all properties to a template
+	/// Renders the file 
+	/// NB. the overrite property
+	/// Set Property SourceTable
+	public void RenderFileUsingProperties(string fullPath, bool overrite, ref CodeTemplate template,TableSchema SourceTable)
+	{
+		if( overrite || (!File.Exists(fullPath)) )
+		{
+			CopyPropertiesTo(template);
+			template.SetProperty("SourceTable",SourceTable);
+			template.RenderToFile(fullPath, overrite);
+		}
+	}
+	
+	/// Copies all properties to a template
+	/// Renders the file  using the preserve regions merge stratagy
+	public void MergeFileUsingPreserve(string fullPath, ref CodeTemplate template)
+	{		
+		CodeSmith.Engine.PreserveRegionsMergeStrategy preserveRegionsMergeStrategy = new PreserveRegionsMergeStrategy();
+		preserveRegionsMergeStrategy.Language = "C#";
+		preserveRegionsMergeStrategy.RegionNameRegex = "PRESERVE";
+		CopyPropertiesTo(template);
+		template.RenderToFile(fullPath,preserveRegionsMergeStrategy);
+	}
+	/// Copies all properties to a template
+	/// Renders the file  using the preserve regions merge stratagy
+	/// Set Property SourceTable
+	public void MergeFileUsingPreserve(string fullPath, ref CodeTemplate template,TableSchema SourceTable)
+	{		
+		CodeSmith.Engine.PreserveRegionsMergeStrategy preserveRegionsMergeStrategy = new PreserveRegionsMergeStrategy();
+		preserveRegionsMergeStrategy.Language = "C#";
+		preserveRegionsMergeStrategy.RegionNameRegex = "PRESERVE";
+		CopyPropertiesTo(template);
+		template.SetProperty("SourceTable",SourceTable);
+		template.RenderToFile(fullPath,preserveRegionsMergeStrategy);
+	}
+	/// Copies all properties to a template
+	/// Renders the file  using the Insert Region merge strategy
+	public void MergeFileUsingInsert(string fullPath, ref CodeTemplate template)
+	{		
+		CodeSmith.Engine.InsertRegionMergeStrategy mergeStrategy = new InsertRegionMergeStrategy();
+		mergeStrategy.Language = "C#";
+		mergeStrategy.RegionName = "PRESERVE";
+		CopyPropertiesTo(template);
+		template.RenderToFile(fullPath,mergeStrategy);
+		
+	}
+	/// Copies all properties to a template
+	/// Renders the file  using the Insert Region merge strategy
+	/// Set Property SourceTable
+	public void MergeFileUsingInsert(string fullPath, ref CodeTemplate template,TableSchema SourceTable)
+	{		
+		CodeSmith.Engine.InsertRegionMergeStrategy mergeStrategy = new InsertRegionMergeStrategy();
+		mergeStrategy.Language = "C#";
+		mergeStrategy.RegionName = "PRESERVE";
+		CopyPropertiesTo(template);
+		template.SetProperty("SourceTable",SourceTable);
+		template.RenderToFile(fullPath,mergeStrategy);
+		
+	}
+	#endregion
+#endregion	
+
+#region Inner Classes	
+	#region TableUtilities Class
+	public class TableUtilities
+	{
+		public static bool SkipTable(TableSchema table)
+		{
+			return (table.PrimaryKey == null || table.Columns.Count < 2);
+            //return false;
+		}
+		public static TableSchemaCollection FilterTables(TableSchemaCollection tables)
+        {			
+            TableSchemaCollection filtered = new TableSchemaCollection();
+            foreach(TableSchema table in tables) 
+            {
+                if(!SkipTable(table)) filtered.Add(table);
+            }
+            return filtered;
+        }
+	}
+	
+	public static string GetClassName(TableSchema table)
+    {
+		
+		if(table==null)
+		{
+		    return null;
+		}
+		return table.Name;
+    }
+	#endregion
+#endregion	
+</script>

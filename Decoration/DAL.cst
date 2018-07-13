@@ -1,0 +1,92 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" ResponseEncoding="UTF-8" Description="Generates a very simple business object." %>
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Category="Context" Description="Table that the object is based on." %>
+<%--<%@ Property Name="NameSpace" Type="System.String" Default="YiHaoJiaJu.CMS" Category="Text" Description="Namespace for this class" %>--%>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import Namespace="System.Text" %>
+// =================================================================== 
+// 项目说明
+//====================================================================
+// 作者：liubo
+// 文件： <%= GetClassName(SourceTable) %>.cs
+// 项目名称：YiHao.Decoration.DAL
+// 创建时间：<%=DateTime.Now.ToShortDateString() %>
+// ===================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using YiHao.Entity;
+using YiHao.Entity.Model;
+using YiHao.Entity.Search;
+
+namespace YiHao.Decoration.DAL
+{
+    public class <%= GetClassName(SourceTable) %>DAL
+    {
+        /// <summary>
+        /// 分页获取数据集
+        /// </summary>
+        /// <param name="seacth"></param>
+        /// <returns></returns>
+        public static ResultSearch QueryListByPager(<%= GetClassName(SourceTable) %>Search seacth)
+        {
+            return SendRequest.Get<ResultSearch>("<%= GetClassName(SourceTable) %>/PageSearch?seacthType=<%= GetClassName(SourceTable) %>Search", seacth);
+        }
+
+        /// <summary>
+        /// 添加数据
+        /// </summary>
+        /// <param name="mdoel"></param>
+        /// <returns></returns>
+        public static Result Add(<%= GetClassName(SourceTable) %> mdoel)
+        {
+            return SendRequest.Post<Result>("<%= GetClassName(SourceTable) %>/Add", mdoel);
+        }
+
+        /// <summary>
+        /// 修改数据
+        /// </summary>
+        /// <param name="mdoel"></param>
+        /// <returns></returns>
+        public static Result Update(<%= GetClassName(SourceTable) %> mdoel)
+        {
+            return SendRequest.Post<Result>("<%= GetClassName(SourceTable) %>/Update", mdoel);
+        }
+
+        /// <summary>
+        /// 删除数据
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static Result Delete(string id)
+        {
+            return SendRequest.Post<Result>("<%= GetClassName(SourceTable) %>/Delete", "itemId="+id.ToString());
+        }
+
+        /// <summary>
+        /// 获取数据实体
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static Result GetModel(int id)
+        {
+            return SendRequest.Get<Result>("<%= GetClassName(SourceTable) %>/GetModel?id="+id);
+        }
+    }
+}
+
+<script runat="template">
+public string GetClassName(TableSchema table)
+    {
+       
+		if(table==null)
+		{
+		    return null;
+		}
+		return table.Name;
+    }
+</script>

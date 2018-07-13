@@ -1,0 +1,274 @@
+﻿<%@ CodeTemplate Language="C#" TargetLanguage="C#" Description="This Template Generates C# domain objects for NHibernate" Debug="true" %>
+<%@ Property Name="Namespace" Type="System.String" Default="OnLine" Category="Object" Description="The class namespace that the mapping file should use" %>
+<%@ Property Name="Assembly" Type="System.String" Default="MyApp.MyAssembly" Category="Object" Description="The assembly that the class will be used in" %>
+<%@ Property Name="RemoveTablePrefix" Type="System.String" Default="tbl" Category="Object" Description="The prefix to remove from table names" %>
+<%@ Property Name="ForceId" Type="System.Boolean" Default="true" Category="Object" Description="Force Id for identity column" %>
+<%@ Assembly Name="System.Design" %>
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.IO" %>
+<%@ Import Namespace="System.Xml" %>
+<%@ Import Namespace="System.Text" %>
+<%@ Import Namespace="System.Windows.Forms.Design" %>
+<%@ Import Namespace="System.Text.RegularExpressions" %>
+
+<script runat="template">
+
+
+	private DatabaseSchema _sourceDatabase;
+	private string _outputDirectory;
+    private bool _implementNotification = true;
+
+
+    [Category("Database")]
+    [Description("Database that the mapping file should be based on.")]
+    public DatabaseSchema SourceDatabase {
+        get { return _sourceDatabase; }
+        set { _sourceDatabase = value; }
+    }
+
+	[Editor(typeof(System.Windows.Forms.Design.FolderNameEditor), typeof(System.Drawing.Design.UITypeEditor))]
+	[Category("Class")]
+    [Description("The folder to save the generated class files.")]
+	public string OutputDirectory
+	{
+		get {return _outputDirectory;}
+		set {_outputDirectory= value;}
+	}
+
+
+
+	public CodeTemplate CompileTemplate(string templateName)
+	{
+		CodeTemplateCompiler compiler = new CodeTemplateCompiler(templateName);
+		compiler.Compile();
+
+		if (compiler.Errors.Count == 0)
+		{
+			return compiler.CreateInstance();
+		}
+		else
+		{
+			for (int i = 0; i < compiler.Errors.Count; i++)
+			{
+				Response.WriteLine(compiler.Errors[i].ToString());
+			}
+			return null;
+		}
+
+	}
+
+	public void Generate()
+	{
+		CodeTemplate ModelObjectTemplate =  CompileTemplate(CodeTemplateInfo.DirectoryName + "Entity.cst");
+		CodeTemplate BLLTemplateSub = CompileTemplate(CodeTemplateInfo.DirectoryName + "BLL.cst");
+		CodeTemplate SQLServerDALTemplateSub = CompileTemplate(CodeTemplateInfo.DirectoryName + "DAL.cst");
+	    CodeTemplate FactoryTemplateSub = CompileTemplate(CodeTemplateInfo.DirectoryName + "Factory.cst");
+        CodeTemplate IDALTemplateSub =  CompileTemplate(CodeTemplateInfo.DirectoryName + "IDAL.cst");
+        CodeTemplate Api_ControllersTemplateSub =  CompileTemplate(CodeTemplateInfo.DirectoryName + "Api_Controllers.cst");
+	
+		string ModelDirectory = OutputDirectory + "\\Common\\YiHao.Entity\\Model\\";
+        string SQLServerDALDirectorySub = OutputDirectory + "\\Middleware\\Yihao.Middleware\\Yihao.Midd.SQLServerDal\\";
+        string BLLDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.BLL\\";
+        string FactoryDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.Factory\\";
+        string IDALDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.IDal\\";
+        string Api_ControllersDirectorySub=OutputDirectory+"\\Middleware\\Yihao.Middleware\\Yihao.Midd.API\\Controllers\\";
+
+		if(!Directory.Exists(ModelDirectory)) Directory.CreateDirectory(ModelDirectory);
+		if(!Directory.Exists(BLLDirectorySub)) Directory.CreateDirectory(BLLDirectorySub);
+		if(!Directory.Exists(SQLServerDALDirectorySub)) Directory.CreateDirectory(SQLServerDALDirectorySub);
+        if(!Directory.Exists(FactoryDirectorySub)) Directory.CreateDirectory(FactoryDirectorySub);
+        if(!Directory.Exists(IDALDirectorySub)) Directory.CreateDirectory(IDALDirectorySub);
+        if(!Directory.Exists(Api_ControllersDirectorySub)) Directory.CreateDirectory(Api_ControllersDirectorySub);
+
+		foreach(TableSchema sourceTable in SourceDatabase.Tables)
+		{
+			Response.Write(string.Format("Processing Table {0} ... ", sourceTable.Name));
+			if (IsManyToManyTable(sourceTable))
+			{
+				Response.WriteLine("skipped, many-to-many link table");
+			}
+			else if (IsSubClassTable(sourceTable))
+			{
+				Response.WriteLine("skipped, sub-class table");
+			}
+			else if (sourceTable.PrimaryKey == null)
+			{
+				Response.WriteLine("skipped, no primary key");
+			}
+			else
+			{
+				try
+				{
+				string className = sourceTable.Name;
+				if (className.StartsWith(RemoveTablePrefix))
+					className = className.Substring(RemoveTablePrefix.Length);
+
+				string classFileName = className;
+				
+				string EntityPath=ModelDirectory + classFileName + "Entity.cs";
+				ModelObjectTemplate.SetProperty("SourceTable", sourceTable);
+				//ModelObjectTemplate.SetProperty("Namespace", Namespace);
+				ModelObjectTemplate.SetProperty("Assembly", Assembly);
+				ModelObjectTemplate.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				ModelObjectTemplate.SetProperty("ForceId", ForceId);
+				ModelObjectTemplate.RenderToFile(EntityPath, true);
+				Response.Write(string.Format("{0} ", EntityPath));
+				
+				
+				string SQLServerDALPath=SQLServerDALDirectorySub + classFileName + "DAL.cs";
+				SQLServerDALTemplateSub.SetProperty("SourceTable", sourceTable);
+				//SQLServerDALTemplateSub.SetProperty("Namespace", Namespace);
+				SQLServerDALTemplateSub.SetProperty("Assembly", Assembly);
+				SQLServerDALTemplateSub.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				SQLServerDALTemplateSub.SetProperty("ForceId", ForceId);
+				SQLServerDALTemplateSub.RenderToFile(SQLServerDALPath, true);
+				Response.Write(string.Format("{0} ", SQLServerDALPath));
+				
+				
+		
+				
+				string BLLSubPath=BLLDirectorySub +  classFileName + "BLL.cs";
+				BLLTemplateSub.SetProperty("SourceTable", sourceTable);
+				//BLLTemplateSub.SetProperty("Namespace", Namespace);
+				BLLTemplateSub.SetProperty("Assembly", Assembly);
+				BLLTemplateSub.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				BLLTemplateSub.SetProperty("ForceId", ForceId);
+				BLLTemplateSub.RenderToFile(BLLSubPath, true);
+				Response.Write(string.Format("{0} ", BLLSubPath));
+
+				string FactoryPath=FactoryDirectorySub +  classFileName + "Factory.cs";
+				FactoryTemplateSub.SetProperty("SourceTable", sourceTable);
+				//FactoryTemplateSub.SetProperty("Namespace", Namespace);
+				FactoryTemplateSub.SetProperty("Assembly", Assembly);
+				FactoryTemplateSub.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				FactoryTemplateSub.SetProperty("ForceId", ForceId);
+				FactoryTemplateSub.RenderToFile(FactoryPath, true);
+				Response.Write(string.Format("{0} ", FactoryPath));
+                
+                
+                string IDALPath=IDALDirectorySub +  classFileName + "IDAL.cs";
+				IDALTemplateSub.SetProperty("SourceTable", sourceTable);
+				//FactoryTemplateSub.SetProperty("Namespace", Namespace);
+				IDALTemplateSub.SetProperty("Assembly", Assembly);
+				IDALTemplateSub.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				IDALTemplateSub.SetProperty("ForceId", ForceId);
+				IDALTemplateSub.RenderToFile(IDALPath, true);
+				Response.Write(string.Format("{0} ", IDALPath));
+                
+                
+                
+                string Api_ControllersPath=Api_ControllersDirectorySub +  classFileName + "Controllers.cs";
+				Api_ControllersTemplateSub.SetProperty("SourceTable", sourceTable);
+				//FactoryTemplateSub.SetProperty("Namespace", Namespace);
+				Api_ControllersTemplateSub.SetProperty("Assembly", Assembly);
+				Api_ControllersTemplateSub.SetProperty("RemoveTablePrefix", RemoveTablePrefix);
+				Api_ControllersTemplateSub.SetProperty("ForceId", ForceId);
+				Api_ControllersTemplateSub.RenderToFile(Api_ControllersPath, true);
+				Response.Write(string.Format("{0} ", Api_ControllersPath));
+
+				}
+				catch (Exception ex)
+				{
+					Response.WriteLine("Error: " + ex);
+				}
+			}
+		}
+	}
+</script>
+<script runat="template">
+private Regex cleanRegEx = new Regex(@"\s+|_|-|\.", RegexOptions.Compiled);
+private Regex cleanID = new Regex(@"(_ID|_id|_Id|\.ID|\.id|\.Id|ID|Id)", RegexOptions.Compiled);
+
+public string CleanName(string name)
+{
+	return cleanRegEx.Replace(name, "");
+}
+
+public string CamelCase(string name)
+{
+	string output = CleanName(name);
+	return char.ToLower(output[0]) + output.Substring(1);
+}
+
+public string PascalCase(string name)
+{
+	string output = CleanName(name);
+	return char.ToUpper(output[0]) + output.Substring(1);
+}
+
+public string MakePlural(string name)
+{
+	Regex plural1 = new Regex("(?<keep>[^aeiou])y$");
+	Regex plural2 = new Regex("(?<keep>[aeiou]y)$");
+	Regex plural3 = new Regex("(?<keep>[sxzh])$");
+	Regex plural4 = new Regex("(?<keep>[^sxzhy])$");
+
+	if(plural1.IsMatch(name))
+		return plural1.Replace(name, "${keep}ies");
+	else if(plural2.IsMatch(name))
+		return plural2.Replace(name, "${keep}s");
+	else if(plural3.IsMatch(name))
+		return plural3.Replace(name, "${keep}es");
+	else if(plural4.IsMatch(name))
+		return plural4.Replace(name, "${keep}s");
+
+	return name;
+}
+
+public string MakeSingle(string name)
+{
+	Regex plural1 = new Regex("(?<keep>[^aeiou])ies$");
+	Regex plural2 = new Regex("(?<keep>[aeiou]y)s$");
+	Regex plural3 = new Regex("(?<keep>[sxzh])es$");
+	Regex plural4 = new Regex("(?<keep>[^sxzhyu])s$");
+
+	if(plural1.IsMatch(name))
+		return plural1.Replace(name, "${keep}y");
+	else if(plural2.IsMatch(name))
+		return plural2.Replace(name, "${keep}");
+	else if(plural3.IsMatch(name))
+		return plural3.Replace(name, "${keep}");
+	else if(plural4.IsMatch(name))
+		return plural4.Replace(name, "${keep}");
+
+	return name;
+}
+
+public bool IsManyToManyTable(TableSchema table)
+{
+    
+	if (table.Columns.Count == 2 && table.PrimaryKey != null && table.PrimaryKey.MemberColumns.Count == 2 && table.ForeignKeys.Count == 2)
+//	if (table.Columns.Count >= 2 && table.PrimaryKey != null && table.PrimaryKey.MemberColumns.Count == 2 && table.ForeignKeys.Count >= 2)
+		return true;
+	else
+		return false;
+    
+    //return false;
+}
+
+public bool IsSubClassTable(TableSchema sourceTable)
+{
+	int count = 0;
+	foreach(TableKeySchema foreignKey in sourceTable.ForeignKeys)
+	{
+		if (foreignKey.ForeignKeyMemberColumns[0].IsPrimaryKeyMember)
+		{
+			//Response.Write(String.Format(" {0}:", foreignKey.PrimaryKeyTable.Name));
+			foreach(TableKeySchema primaryKey in foreignKey.PrimaryKeyTable.PrimaryKeys)
+			{
+				//Response.Write(String.Format(" {0} ", primaryKey.ForeignKeyTable.Name ));
+				if (primaryKey.ForeignKeyMemberColumns[0].IsPrimaryKeyMember && primaryKey.ForeignKeyTable.PrimaryKey.MemberColumns.Count == 1)
+					count++;
+			}
+		}
+	}
+	if (count > 1)
+		return true;
+
+	return false;
+    
+    //return false;
+}
+</script>
+<% this.Generate();  %>
